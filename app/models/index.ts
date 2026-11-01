@@ -41,18 +41,27 @@ export interface RawMaterial {
     name: string; 
 }
 
+export interface FinishingOptionsPayload {
+    Binding: string;
+    AdditionalOptions: string[];
+    SurfaceFinish: string;
+}
+
 export interface JobRequestDetail {
-    jobNames: string;
-    serviceCategoryId: string;
+    jobName: string;
     size: string;
     customSize?: string;
     quantity: number;
     pages: number;
     paperInside: string;
     paperCover: string;
+    paperInsideRawMaterialId: string;
+    paperCoverRawMaterialId: string;
+    paperInsideVariant: string;
+    paperCoverVariant: string;
     noOfColoursText: number;
     noOfColoursCover: number;
-    finishingOptions: string[];
+    finishingOptions: FinishingOptionsPayload;
     otherInstructions: string;
 }
 

@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { reactive, ref, computed, nextTick, onMounted } from 'vue'
 import { getRawMaterials, submitOrderRequest } from '~/services/productionOrder'
-import type { RawMaterial } from '~/models'
+import type { OrderRequest, RawMaterial } from '~/models'
+import { buildFinishingOptions } from '~/utils/finishingOptions'
 
 useSeoMeta({ title: 'Request a Quote | G-PAK Limited', description: 'Tell G-PAK Limited about your print or packaging project and request a tailored quote.' })
 
@@ -22,7 +23,6 @@ const finishGroups = [
 ] as const
 const bindings = ['Saddle stitch', 'Perfect bind', 'Case bind', 'Wire O', 'Spiral bind', 'Side stab', 'Padding']
 const addOns = ['Die cutting', 'Embossing', 'Folding', 'Numbering', 'Perforating', 'Punching', 'Cutting', 'Sewing', 'Fold/Glue', 'Glue']
-const toApiOption = (value: string) => ({ 'UV varnish': 'uv-vanish', 'Waterbase varnish': 'waterbase-vanish', 'Oil varnish': 'oil-vanish' }[value] || value.toLowerCase().replace(/[ \/]+/g, '-'))
 const emptyJob = () => ({
   jobName: '', pages: 1, quantity: 1, size: '', customSize: '',
   noOfColoursCover: 1, noOfColoursText: 1,
@@ -111,22 +111,27 @@ async function handleSubmit() {
   errorMessage.value = ''
   isSubmitting.value = true
   try {
-    const payload = {
+    const payload: OrderRequest = {
       ...form,
       noOfJobs: form.jobRequests.length,
-      jobRequests: form.jobRequests.map(job => ({
-        ...job,
-        binding: job.binding === 'custom' ? 'custom' : toApiOption(job.binding),
-        addons: job.addons.map(toApiOption),
-        laminate: job.laminate === 'custom' ? 'custom' : toApiOption(job.laminate),
-        vanish: job.vanish === 'custom' ? 'custom' : toApiOption(job.vanish),
-        spot: job.spot === 'custom' ? 'custom' : toApiOption(job.spot),
-        windowPatching: job.windowPatching === 'custom' ? 'custom' : toApiOption(job.windowPatching),
-        paperInside: rawMaterials.value.find(m => m.id === job.paperInsideRawMaterialId)?.name || job.paperInside,
-        paperCover: rawMaterials.value.find(m => m.id === job.paperCoverRawMaterialId)?.name || job.paperCover,
-        paperInsideRawMaterialId: job.paperInsideRawMaterialId || '00000000-0000-0000-0000-000000000000',
-        paperCoverRawMaterialId: job.paperCoverRawMaterialId || '00000000-0000-0000-0000-000000000000'
-      }))
+      jobRequests: form.jobRequests.map(job => {
+        // Finishing choices are sent only in the nested API format, not as
+        // duplicate display-state fields on the job request.
+        const {
+          binding, bindingCustom, addons, addonsCustom,
+          laminate, laminateCustom, vanish, vanishCustom,
+          spot, spotCustom, windowPatching, windowPatchingCustom,
+          ...projectDetails
+        } = job
+        return {
+          ...projectDetails,
+          finishingOptions: buildFinishingOptions(job),
+          paperInside: rawMaterials.value.find(m => m.id === job.paperInsideRawMaterialId)?.name || job.paperInside,
+          paperCover: rawMaterials.value.find(m => m.id === job.paperCoverRawMaterialId)?.name || job.paperCover,
+          paperInsideRawMaterialId: job.paperInsideRawMaterialId || '00000000-0000-0000-0000-000000000000',
+          paperCoverRawMaterialId: job.paperCoverRawMaterialId || '00000000-0000-0000-0000-000000000000'
+        }
+      })
     }
     if (!await submitOrderRequest(payload)) throw new Error('Request unsuccessful')
     submitSuccess.value = true
