@@ -43,8 +43,6 @@ const slides = [
 const activeIndex = ref(0)
 const activeSlide = computed(() => slides[activeIndex.value]!)
 const isPlaying = ref(true)
-const isHovered = ref(false)
-const hasFocus = ref(false)
 const isVisible = ref(true)
 const prefersReducedMotion = ref(false)
 const announcement = ref('')
@@ -56,8 +54,8 @@ function stopTimer() {
 }
 function syncTimer() {
   stopTimer()
-  if (isPlaying.value && !isHovered.value && !hasFocus.value && isVisible.value && !prefersReducedMotion.value) {
-    timer = setInterval(() => changeSlide(activeIndex.value + 1, false), 6500)
+  if (isPlaying.value && isVisible.value) {
+    timer = setInterval(() => changeSlide(activeIndex.value + 1, false), 5500)
   }
 }
 function changeSlide(index: number, announce = true) {
@@ -73,13 +71,6 @@ function onVisibilityChange() {
   isVisible.value = !document.hidden
   syncTimer()
 }
-function onFocusOut(event: FocusEvent) {
-  const next = event.relatedTarget
-  if (!(next instanceof Node) || !(event.currentTarget instanceof Node) || !event.currentTarget.contains(next)) {
-    hasFocus.value = false
-    syncTimer()
-  }
-}
 onMounted(() => {
   prefersReducedMotion.value = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   if (prefersReducedMotion.value) isPlaying.value = false
@@ -94,7 +85,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-  <section class="service-carousel" aria-label="Explore G-PAK services" @mouseenter="isHovered = true; syncTimer()" @mouseleave="isHovered = false; syncTimer()" @focusin="hasFocus = true; syncTimer()" @focusout="onFocusOut">
+  <section class="service-carousel" aria-label="Explore G-PAK services">
     <div class="carousel-copy">
       <div class="copy-inner">
         <Transition name="slide-copy" mode="out-in">
