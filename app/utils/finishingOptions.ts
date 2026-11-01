@@ -31,8 +31,8 @@ export function buildFinishingOptions(job: FinishingSelection) {
   const surface = surfaceGroups.find(([, value]) => !!value)
 
   return {
-    Binding: selected(job.binding, job.bindingCustom),
-    AdditionalOptions: job.addons.map(value => selected(value, job.addonsCustom)).filter(Boolean),
-    SurfaceFinish: surface ? `${surface[0]}:${selected(surface[1], surface[2])}` : ''
+    binding: selected(job.binding, job.bindingCustom),
+    additionalOptions: job.addons.map(value => selected(value, job.addonsCustom)).filter(Boolean),
+    surfaceFinish: surface ? `${surface[0]}:${selected(surface[1], surface[2])}` : ''
   }
 }

@@ -10,7 +10,7 @@ const blank = () => ({
 
 test('unselected finishing options have the expected empty API shape', () => {
   assert.deepEqual(buildFinishingOptions(blank()), {
-    Binding: '', AdditionalOptions: [], SurfaceFinish: ''
+    binding: '', additionalOptions: [], surfaceFinish: ''
   })
 })
 
@@ -18,18 +18,18 @@ test('binding, add-ons and lamination use lower-case API values', () => {
   assert.deepEqual(buildFinishingOptions({
     ...blank(), binding: 'Saddle stitch', addons: ['Die cutting', 'Fold/Glue'], laminate: 'Gloss'
   }), {
-    Binding: 'saddle-stitch', AdditionalOptions: ['die-cutting', 'fold-glue'], SurfaceFinish: 'lamination:gloss'
+    binding: 'saddle-stitch', additionalOptions: ['die-cutting', 'fold-glue'], surfaceFinish: 'lamination:gloss'
   })
 })
 
 test('varnish uses the requested category and selected label', () => {
-  assert.equal(buildFinishingOptions({ ...blank(), vanish: 'Waterbase varnish' }).SurfaceFinish, 'varnish:waterbase-varnish')
+  assert.equal(buildFinishingOptions({ ...blank(), vanish: 'Waterbase varnish' }).surfaceFinish, 'varnish:waterbase-varnish')
 })
 
 test('custom choices retain their entered descriptions in slug form', () => {
   assert.deepEqual(buildFinishingOptions({
     ...blank(), binding: 'custom', bindingCustom: 'Hand sewn', addons: ['custom'], addonsCustom: 'Foil Stamping', spot: 'custom', spotCustom: 'Raised UV'
   }), {
-    Binding: 'hand-sewn', AdditionalOptions: ['foil-stamping'], SurfaceFinish: 'spot:raised-uv'
+    binding: 'hand-sewn', additionalOptions: ['foil-stamping'], surfaceFinish: 'spot:raised-uv'
   })
 })

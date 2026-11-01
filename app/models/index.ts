@@ -42,9 +42,9 @@ export interface RawMaterial {
 }
 
 export interface FinishingOptionsPayload {
-    Binding: string;
-    AdditionalOptions: string[];
-    SurfaceFinish: string;
+    binding: string;
+    additionalOptions: string[];
+    surfaceFinish: string;
 }
 
 export interface JobRequestDetail {
