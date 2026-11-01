@@ -37,6 +37,9 @@ type FinishKey = 'laminate' | 'vanish' | 'spot' | 'windowPatching'
 const projectKeys = ref([0])
 let nextProjectKey = 1
 const projectAnnouncement = ref('')
+const assetsByProject = ref<Record<number, File[]>>({ 0: [] })
+const submittedFiles = ref<string[]>([])
+const assetEmailHref = ref('')
 const form = reactive({ customer: '', contactName: '', phoneNo: '', emailAddress: '', location: '', noOfJobs: 1, jobRequests: [emptyJob()] })
 const touched = ref(false)
 const phoneValid = computed(() => form.phoneNo.replace(/\D/g, '').length >= 9)
@@ -77,6 +80,7 @@ async function addJob() {
   const projectId = nextProjectKey++
   form.jobRequests.push(emptyJob())
   projectKeys.value.push(projectId)
+  assetsByProject.value = { ...assetsByProject.value, [projectId]: [] }
   form.noOfJobs = form.jobRequests.length
   projectAnnouncement.value = `Project ${form.noOfJobs} added. Complete its details below.`
 
@@ -91,9 +95,15 @@ async function addJob() {
 function removeJob(index: number) {
   if (form.jobRequests.length <= 1) return
   form.jobRequests.splice(index, 1)
-  projectKeys.value.splice(index, 1)
+  const [removedKey] = projectKeys.value.splice(index, 1)
+  const remaining = { ...assetsByProject.value }
+  delete remaining[removedKey!]
+  assetsByProject.value = remaining
   form.noOfJobs = form.jobRequests.length
   projectAnnouncement.value = `Project removed. ${form.noOfJobs} project${form.noOfJobs === 1 ? '' : 's'} remaining.`
+}
+function updateAssets(projectId: number, files: File[]) {
+  assetsByProject.value = { ...assetsByProject.value, [projectId]: files }
 }
 function selectFinish(job: Job, key: FinishKey, value: string) {
   const alreadySelected = job[key] === value
@@ -114,7 +124,7 @@ async function handleSubmit() {
     const payload: OrderRequest = {
       ...form,
       noOfJobs: form.jobRequests.length,
-      jobRequests: form.jobRequests.map(job => {
+      jobRequests: form.jobRequests.map((job, index) => {
         // Finishing choices are sent only in the nested API format, not as
         // duplicate display-state fields on the job request.
         const {
@@ -123,8 +133,15 @@ async function handleSubmit() {
           spot, spotCustom, windowPatching, windowPatchingCustom,
           ...projectDetails
         } = job
+        const selectedAssets = assetsByProject.value[projectKeys.value[index]!] || []
         return {
           ...projectDetails,
+          // The order API accepts JSON only. Let the team know that design files
+          // will arrive separately by email rather than silently dropping them.
+          otherInstructions: [
+            job.otherInstructions,
+            selectedAssets.length ? `Design assets to follow by email: ${selectedAssets.map(file => file.name).join(', ')}` : ''
+          ].filter(Boolean).join('\n'),
           finishingOptions: buildFinishingOptions(job),
           paperInside: rawMaterials.value.find(m => m.id === job.paperInsideRawMaterialId)?.name || job.paperInside,
           paperCover: rawMaterials.value.find(m => m.id === job.paperCoverRawMaterialId)?.name || job.paperCover,
@@ -134,10 +151,15 @@ async function handleSubmit() {
       })
     }
     if (!await submitOrderRequest(payload)) throw new Error('Request unsuccessful')
+    submittedFiles.value = form.jobRequests.flatMap((job, index) =>
+      (assetsByProject.value[projectKeys.value[index]!] || []).map(file => `${job.jobName}: ${file.name}`)
+    )
+    assetEmailHref.value = `mailto:gpakltd@graphic.com.gh?subject=${encodeURIComponent(`Design assets for ${form.customer} print request`)}&body=${encodeURIComponent(`Hello G-PAK,\n\nI just submitted a print request on your website. Please find my design assets attached for the following projects:\n${submittedFiles.value.join('\n')}\n\nThank you,\n${form.contactName}`)}`
     submitSuccess.value = true
     Object.assign(form, { customer: '', contactName: '', phoneNo: '', emailAddress: '', location: '', noOfJobs: 1, jobRequests: [emptyJob()] })
     step.value = 0
     projectKeys.value = [0]
+    assetsByProject.value = { 0: [] }
     nextProjectKey = 1
     projectAnnouncement.value = ''
     touched.value = false
@@ -157,6 +179,7 @@ onMounted(async () => {
     <main class="order-page">
       <div class="container">
         <div class="order-intro"><div><p class="section-kicker">LET'S GET STARTED</p><h1>Tell us what you're<br /><em>imagining.</em></h1><p>Share a few details about your project and our team will take it from there. You can review everything before sending.</p></div><div class="intro-aside"><span>YOUR PROJECT, OUR PRIORITY</span><p>Thoughtful print begins<br />with a conversation.</p></div></div>
+        <div v-if="submittedFiles.length && !submitSuccess" class="post-submit-handoff" role="status"><strong>Remember to send your design files</strong><p>Your print request was sent, but your selected files still need to be emailed separately to G-PAK.</p><a :href="assetEmailHref">Open the prepared email ↗</a><span>Or email <a href="mailto:gpakltd@graphic.com.gh">gpakltd@graphic.com.gh</a> directly.</span></div>
         <div ref="progressTop" class="progress-anchor" aria-hidden="true"></div>
         <div class="wizard-progress">
           <div class="progress-heading">
@@ -210,6 +233,8 @@ onMounted(async () => {
                   :touched="touched"
                   :raw-materials="rawMaterials"
                   :materials-error="materialsError"
+                  :assets="assetsByProject[projectKeys[index]!] || []"
+                  @assets-change="updateAssets(projectKeys[index]!, $event)"
                   @remove="removeJob(index)"
                 />
                 <p class="add-project-help">Have another item in mind? You can include multiple projects in one request.</p>
@@ -227,7 +252,7 @@ onMounted(async () => {
               </div>
               <div v-else class="step-panel"><div class="panel-heading"><p class="panel-eyebrow">04 / REVIEW & SEND</p><h2>Looking good?</h2><p>Check the details below before sending your request. Our team will get back to you about the next steps.</p></div>
                 <div class="review-block"><div class="review-title"><h3>Your details</h3><button type="button" @click="goTo(0)">Edit ↗</button></div><div class="review-grid"><div><span>BUSINESS</span><strong>{{ form.customer }}</strong></div><div><span>CONTACT</span><strong>{{ form.contactName }}</strong></div><div><span>PHONE</span><strong>{{ form.phoneNo }}</strong></div><div><span>EMAIL</span><strong>{{ form.emailAddress }}</strong></div><div v-if="form.location"><span>LOCATION</span><strong>{{ form.location }}</strong></div></div></div>
-                <div v-for="(job, index) in form.jobRequests" :key="index" class="review-block"><div class="review-title"><h3>Project {{ String(index + 1).padStart(2, '0') }} · {{ job.jobName }}</h3><button type="button" @click="goTo(1)">Edit ↗</button></div><div class="review-grid"><div><span>QUANTITY</span><strong>{{ job.quantity }}</strong></div><div><span>PAGES</span><strong>{{ job.pages }}</strong></div><div><span>SIZE</span><strong>{{ job.size === 'custom' ? job.customSize : job.size || 'To be discussed' }}</strong></div><div><span>PAPER</span><strong>{{ job.paperInside || 'To be discussed' }}</strong></div><div><span>COVER PAPER</span><strong>{{ job.paperCover || 'To be discussed' }}</strong></div><div><span>TEXT / COVER COLOURS</span><strong>{{ job.noOfColoursText }} / {{ job.noOfColoursCover }}</strong></div><div><span>BINDING</span><strong>{{ job.binding === 'custom' ? job.bindingCustom || 'Custom' : job.binding || 'To be discussed' }}</strong></div><div><span>FINISH</span><strong>{{ finishLabel(job) }}</strong></div><div><span>ADD-ONS</span><strong>{{ job.addons.length ? job.addons.map(item => item === 'custom' ? job.addonsCustom || 'Custom' : item).join(', ') : 'None selected' }}</strong></div><div v-if="job.otherInstructions"><span>OTHER INSTRUCTIONS</span><strong>{{ job.otherInstructions }}</strong></div></div><button type="button" class="review-finish-edit" @click="goTo(2)">Edit finishing & notes ↗</button></div>
+                <div v-for="(job, index) in form.jobRequests" :key="index" class="review-block"><div class="review-title"><h3>Project {{ String(index + 1).padStart(2, '0') }} · {{ job.jobName }}</h3><button type="button" @click="goTo(1)">Edit ↗</button></div><div class="review-grid"><div><span>QUANTITY</span><strong>{{ job.quantity }}</strong></div><div><span>PAGES</span><strong>{{ job.pages }}</strong></div><div><span>SIZE</span><strong>{{ job.size === 'custom' ? job.customSize : job.size || 'To be discussed' }}</strong></div><div><span>PAPER</span><strong>{{ job.paperInside || 'To be discussed' }}</strong></div><div><span>COVER PAPER</span><strong>{{ job.paperCover || 'To be discussed' }}</strong></div><div><span>TEXT / COVER COLOURS</span><strong>{{ job.noOfColoursText }} / {{ job.noOfColoursCover }}</strong></div><div><span>BINDING</span><strong>{{ job.binding === 'custom' ? job.bindingCustom || 'Custom' : job.binding || 'To be discussed' }}</strong></div><div><span>FINISH</span><strong>{{ finishLabel(job) }}</strong></div><div><span>ADD-ONS</span><strong>{{ job.addons.length ? job.addons.map(item => item === 'custom' ? job.addonsCustom || 'Custom' : item).join(', ') : 'None selected' }}</strong></div><div v-if="job.otherInstructions"><span>OTHER INSTRUCTIONS</span><strong>{{ job.otherInstructions }}</strong></div></div><div v-if="assetsByProject[projectKeys[index]!]?.length" class="review-assets"><strong>Design assets selected</strong><ul><li v-for="file in assetsByProject[projectKeys[index]!]" :key="`${file.name}-${file.lastModified}`">{{ file.name }}</li></ul><p>These files are not uploaded with this request. Please email them after submitting.</p></div><button type="button" class="review-finish-edit" @click="goTo(2)">Edit finishing & notes ↗</button></div>
                 <div class="review-assurance"><span>✳</span><p>Once submitted, your details go directly to our team. We'll be in touch to discuss your requirements and a tailored quote.</p></div>
               </div>
               <p v-if="errorMessage" class="form-error" role="alert">{{ errorMessage }}</p>
@@ -239,7 +264,7 @@ onMounted(async () => {
       </div>
     </main>
     <AppFooter />
-    <div v-if="submitSuccess" class="success-overlay" role="dialog" aria-modal="true" aria-labelledby="success-title"><div class="success-card"><span class="success-icon">✓</span><p class="panel-eyebrow">REQUEST RECEIVED</p><h2 id="success-title">Thank you for reaching out.</h2><p>Your project details have been sent to our team. We'll be in touch to discuss the next steps.</p><button type="button" class="button button-red" @click="submitSuccess = false">Back to the website ↗</button></div></div>
+    <div v-if="submitSuccess" class="success-overlay" role="dialog" aria-modal="true" aria-labelledby="success-title"><div class="success-card"><span class="success-icon">✓</span><p class="panel-eyebrow">REQUEST RECEIVED</p><h2 id="success-title">Thank you for reaching out.</h2><p>Your project details have been sent to our team. We'll be in touch to discuss the next steps.</p><div v-if="submittedFiles.length" class="email-handoff"><strong>One more step for your design files</strong><p>Your files were not uploaded with the form. Open an email to G-PAK, attach the files from your device, then send it.</p><ul><li v-for="filename in submittedFiles" :key="filename">{{ filename }}</li></ul><a :href="assetEmailHref" class="button button-red">Open email to send files ↗</a></div><button type="button" class="dismiss-button" @click="submitSuccess = false">{{ submittedFiles.length ? 'I’ll do this later' : 'Back to the website' }}</button></div></div>
   </div>
 </template>
 
@@ -249,6 +274,8 @@ onMounted(async () => {
 
 .add-project-help{font-size:12px;color:#78827a;margin:0 0 12px}
 .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+.post-submit-handoff{background:#eef5ee;border-left:3px solid #497858;padding:17px 20px;margin:0 0 20px;font-size:12px;color:#405b48}.post-submit-handoff strong{font-size:14px}.post-submit-handoff p{margin:5px 0}.post-submit-handoff>a{color:#b42233;font-weight:700;display:inline-block;margin:4px 0}.post-submit-handoff span{display:block}.post-submit-handoff span a{text-decoration:underline}
+.review-assets{margin-top:20px;padding:14px 16px;background:#f2f6f1;font-size:12px;color:#425548}.review-assets ul,.email-handoff ul{padding-left:18px;margin:8px 0}.review-assets p{color:#7a5b33;margin:8px 0 0}.email-handoff{background:#f4f7f2;text-align:left;padding:18px;margin:18px 0}.email-handoff strong{font-size:14px}.email-handoff p,.email-handoff li{font-size:12px;line-height:1.6;color:#5d6c60}.email-handoff .button{display:flex;text-align:center;margin:16px 0 0;justify-content:center}.dismiss-button{background:none;border:0;text-decoration:underline;color:#52685b;margin-top:16px;font-weight:700;font-size:12px}
 .progress-anchor{height:1px;margin-bottom:-1px}
 .wizard-progress{position:sticky;top:0;z-index:40;background:#fff;border:1px solid #e1e7e1;border-bottom:0;box-shadow:0 8px 20px rgba(30,42,36,.08);scroll-margin-top:0}
 .progress-heading{display:flex;align-items:center;justify-content:space-between;padding:12px 24px 0;gap:16px}
