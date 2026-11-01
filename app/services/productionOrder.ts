@@ -57,10 +57,14 @@ export async function rejectQuotation(payload: object) {
 }
 
 export async function submitOrderRequest(payload: OrderRequest) {
+  const body = buildOrderFormData(payload);
+  if (body.getAll('uploadFiles').length !== payload.uploadFiles.length) {
+    throw new Error('Design files could not be added to the request');
+  }
   const response = await httpClient<BaseApiResponse<object>>('ProductionRequest/SubmitRequest', {
     method: 'post',
     // Let the browser set the multipart boundary; do not set Content-Type.
-    body: buildOrderFormData(payload),
+    body,
     headers: {
       AccountSecret: 'LgDPlDbE'
     }

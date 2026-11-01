@@ -126,6 +126,10 @@ async function handleSubmit() {
     const payload: OrderRequest = {
       ...form,
       noOfJobs: form.jobRequests.length,
+      // ASP.NET Core binds a top-level List<IFormFile> from repeated
+      // multipart fields named "uploadFiles".
+      uploadFiles: form.jobRequests.flatMap((_, index) =>
+        assetsByProject.value[projectKeys.value[index]!] || []),
       jobRequests: form.jobRequests.map((job, index) => {
         // Finishing choices are sent only in the nested API format, not as
         // duplicate display-state fields on the job request.
@@ -135,10 +139,14 @@ async function handleSubmit() {
           spot, spotCustom, windowPatching, windowPatchingCustom,
           ...projectDetails
         } = job
-        const selectedAssets = assetsByProject.value[projectKeys.value[index]!] || []
+        const projectFiles = assetsByProject.value[projectKeys.value[index]!] || []
         return {
           ...projectDetails,
-          uploadFiles: selectedAssets,
+          // Files are uploaded at the order level; retain their project
+          // association in the existing instructions field for the team.
+          otherInstructions: [job.otherInstructions, projectFiles.length
+            ? `Design files for this project: ${projectFiles.map(file => file.name).join(', ')}` : '']
+            .filter(Boolean).join('\n'),
           finishingOptions: buildFinishingOptions(job),
           paperInside: rawMaterials.value.find(m => m.id === job.paperInsideRawMaterialId)?.name || job.paperInside,
           paperCover: rawMaterials.value.find(m => m.id === job.paperCoverRawMaterialId)?.name || job.paperCover,
@@ -156,8 +164,10 @@ async function handleSubmit() {
     nextProjectKey = 1
     projectAnnouncement.value = ''
     touched.value = false
-  } catch {
-    errorMessage.value = 'We could not send your request. Please try again, or contact us directly.'
+  } catch (error) {
+    errorMessage.value = error instanceof Error && error.message === 'Design files could not be added to the request'
+      ? 'Your design files could not be attached. Please remove and reselect them, then try again.'
+      : 'We could not send your request. Please try again, or contact us directly.'
   } finally { isSubmitting.value = false }
 }
 onMounted(async () => {

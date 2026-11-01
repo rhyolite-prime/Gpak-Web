@@ -2,7 +2,8 @@ import type { OrderRequest } from '~/models'
 
 /**
  * Flatten the order into ASP.NET Core [FromForm] field names. Array indexes
- * bind jobRequests and additionalOptions; IFormFile lists use repeated keys.
+ * bind jobRequests and additionalOptions. The top-level List<IFormFile>
+ * binds from repeated multipart parts named exactly "uploadFiles".
  */
 export function buildOrderFormData(order: OrderRequest): FormData {
   const form = new FormData()
