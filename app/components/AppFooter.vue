@@ -1,101 +1,29 @@
 <template>
-  <footer class="app-footer">
+  <footer class="site-footer">
     <div class="container">
-      <div class="footer-grid">
-        <div class="footer-brand">
-          <NuxtLink to="/" class="logo">
-            <img src="/images/PHOTO-2025-04-23-19-12-494.jpg" alt="G-PAK LTD" class="logo-img" />
-          </NuxtLink>
-          <p class="text-muted mt-md">Premium printing and packaging solutions tailored for your business needs.</p>
+      <div class="footer-top">
+        <div class="footer-intro">
+          <NuxtLink to="/" class="footer-wordmark" aria-label="G-PAK Limited home">G-PAK<span>.</span></NuxtLink>
+          <p>Thoughtfully printed.<br />Made to leave an impression.</p>
         </div>
-        
-        <div class="footer-links">
-          <h3>Quick Links</h3>
-          <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#about">About Us</a></li>
-            <li><a href="#services">Services</a></li>
-            <li><a href="#contact">Contact</a></li>
-          </ul>
+        <div class="footer-column">
+          <h3>Explore</h3>
+          <NuxtLink to="/">Home</NuxtLink>
+          <NuxtLink to="/#about">About us</NuxtLink>
+          <NuxtLink to="/#services">Our services</NuxtLink>
+          <NuxtLink to="/order">Request a quote</NuxtLink>
         </div>
-        
-        <div class="footer-contact">
-          <h3>Contact</h3>
-          <p class="text-muted">No.3 Graphic Road, P. O. Box GP 742, Accra, Ghana</p>
-          <p class="text-muted mt-sm">info@gpak.com.gh</p>
+        <div class="footer-column">
+          <h3>Get in touch</h3>
+          <a href="tel:+233302666052">+233 (0) 302 666 052</a>
+          <a href="mailto:gpakltd@graphic.com.gh">gpakltd@graphic.com.gh</a>
+          <p>No. 3 Graphic Road<br />Accra, Ghana</p>
         </div>
       </div>
-      
       <div class="footer-bottom">
-        <p class="text-muted text-sm">&copy; {{ new Date().getFullYear() }} G-PAK Limited. All rights reserved.</p>
+        <span>© {{ new Date().getFullYear() }} G-PAK Limited. All rights reserved.</span>
+        <span>Printing possibilities in Accra, Ghana.</span>
       </div>
     </div>
   </footer>
 </template>
-
-<style scoped>
-.app-footer {
-  background-color: #050505;
-  padding: var(--space-2xl) 0 0 0;
-  border-top: 1px solid var(--color-border);
-}
-
-.footer-grid {
-  display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: var(--space-2xl);
-  margin-bottom: var(--space-xl);
-}
-
-.logo {
-  font-size: 1.8rem;
-  font-weight: 800;
-  display: flex;
-  align-items: center;
-}
-
-.logo-img {
-  max-height: 50px;
-  width: auto;
-  border-radius: 6px;
-}
-
-.footer-links h3, .footer-contact h3 {
-  font-size: 1.2rem;
-  margin-bottom: var(--space-md);
-  color: #fff;
-}
-
-.footer-links ul {
-  list-style: none;
-}
-
-.footer-links li {
-  margin-bottom: var(--space-sm);
-}
-
-.footer-links a {
-  color: var(--color-text-muted);
-}
-
-.footer-links a:hover {
-  color: var(--color-primary);
-}
-
-.footer-bottom {
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  padding: var(--space-lg) 0;
-  text-align: center;
-}
-
-.text-sm {
-  font-size: 0.9rem;
-}
-
-@media (max-width: 768px) {
-  .footer-grid {
-    grid-template-columns: 1fr;
-    gap: var(--space-lg);
-  }
-}
-</style>
