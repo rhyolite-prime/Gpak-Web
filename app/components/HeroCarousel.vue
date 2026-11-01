@@ -8,7 +8,7 @@ const slides = [
     description: 'From brochures and magazines to annual reports and stationery, we make every message feel considered.',
     image: '/images/ghana-print-team.jpg',
     alt: 'Illustrative image of Ghanaian print professionals reviewing a printed sheet',
-    imageNote: 'ILLUSTRATIVE IMAGE',
+    imageNote: '',
     theme: 'photo'
   },
   {
@@ -100,7 +100,7 @@ onUnmounted(() => {
           </div>
         </Transition>
         <div class="carousel-bottom">
-          <div class="hero-note"><span class="note-symbol">✳</span><span>Made with care in Accra, Ghana</span></div>
+          <div class="hero-note"><span class="note-symbol"> </span><span> </span></div>
           <div class="carousel-controls">
             <button type="button" class="arrow-control" aria-label="Previous service" @click="changeSlide(activeIndex - 1)">←</button>
             <button type="button" class="arrow-control" aria-label="Next service" @click="changeSlide(activeIndex + 1)">→</button>
