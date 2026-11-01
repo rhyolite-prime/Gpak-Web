@@ -57,7 +57,6 @@ function removeFile(index: number) {
     <ul v-if="files.length" class="asset-list" aria-label="Selected design files">
       <li v-for="(file, index) in files" :key="`${file.name}-${file.size}-${file.lastModified}`"><div><span class="file-icon" aria-hidden="true">▤</span><span class="file-name">{{ file.name }}</span><span class="file-size">{{ formatSize(file.size) }}</span></div><button type="button" :aria-label="`Remove ${file.name}`" @click="removeFile(index)">Remove ×</button></li>
     </ul>
-    <p class="delivery-note"><strong>How files are shared:</strong> Files are not uploaded with this form yet. After you send your request, we'll give you an email link and ask you to attach these files from your device.</p>
   </div>
 </template>
 
