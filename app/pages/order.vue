@@ -21,7 +21,7 @@ const finishGroups = [
   { key: 'windowPatching', label: 'Window patching', options: ['Window patching'] }
 ] as const
 const bindings = ['Saddle stitch', 'Perfect bind', 'Case bind', 'Wire O', 'Spiral bind', 'Side stab', 'Padding']
-const addOns = ['Die cutting', 'Embossing', 'Folding', 'Numbering', 'Perforating', 'Punching', 'Cutting', 'Sewing', 'Fold/Glue', 'Glue']
+const addOns = ['Die cutting', 'Embossing', 'Numbering', 'Perforating', 'Punching', 'Cutting', 'Sewing', 'Fold/Glue', 'Glue']
 const toApiOption = (value: string) => ({ 'UV varnish': 'uv-vanish', 'Waterbase varnish': 'waterbase-vanish', 'Oil varnish': 'oil-vanish' }[value] || value.toLowerCase().replace(/[ \/]+/g, '-'))
 const emptyJob = () => ({
   jobName: '', pages: 1, quantity: 1, size: '', customSize: '',
