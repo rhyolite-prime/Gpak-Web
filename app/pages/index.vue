@@ -16,30 +16,7 @@ const services = [
   <div>
     <AppHeader />
     <main>
-      <section class="hero" aria-labelledby="hero-title">
-        <div class="hero-copy">
-          <div class="hero-copy-inner">
-            <p class="eyebrow"><span class="eyebrow-line"></span> PRINTING & PACKAGING SPECIALISTS</p>
-            <h1 id="hero-title">Ideas made<br /><em>tangible.</em></h1>
-            <p class="hero-description">From the first spark to the final finish, we bring your ideas to life through exceptional print and packaging.</p>
-            <div class="hero-buttons">
-              <NuxtLink to="/order" class="button button-red">Start your project <span aria-hidden="true">↗</span></NuxtLink>
-              <a href="#services" class="text-link">Explore our services <span aria-hidden="true">↗</span></a>
-            </div>
-            <div class="hero-note"><span class="note-symbol">✳</span><span>Made with care in Accra, Ghana</span></div>
-          </div>
-        </div>
-        <div class="hero-visual">
-          <img src="/images/ghana-print-team.jpg" alt="Illustrative photo of Ghanaian print professionals reviewing a printed sheet" fetchpriority="high" />
-          <div class="hero-visual-shade"></div>
-          <div class="hero-image-label"><span class="label-mark">G<span>•</span>PAK</span><span>PRINT WITH PURPOSE<br />PRINT WITH PRECISION</span></div>
-          <div class="hero-image-index">01 / 04 <span></span> ILLUSTRATIVE IMAGE</div>
-        </div>
-      </section>
-
-      <div class="expertise-strip" aria-label="Our expertise">
-        <div class="container strip-inner"><span>What we do best</span><b>BOOKWORK</b><i></i><b>COMMERCIAL PRINT</b><i></i><b>PACKAGING</b><i></i><b>DESIGN</b></div>
-      </div>
+      <HeroCarousel />
 
       <section id="about" class="intro-section section-space">
         <div class="container intro-grid">
