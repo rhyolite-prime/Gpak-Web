@@ -90,7 +90,7 @@ onUnmounted(() => {
       <div class="copy-inner">
         <Transition name="slide-copy" mode="out-in">
           <div :key="activeIndex" class="copy-content" aria-live="off">
-            <p class="eyebrow"><span class="eyebrow-line"></span> {{ String(activeIndex + 1).padStart(2, '0') }} / {{ activeSlide.service.toUpperCase() }}</p>
+            <p class="eyebrow"><span class="eyebrow-line"></span> {{ activeSlide.service.toUpperCase() }}</p>
             <h1>{{ activeSlide.heading }}<br /><em>{{ activeSlide.emphasis }}</em></h1>
             <p class="hero-description">{{ activeSlide.description }}</p>
             <div class="hero-buttons">
@@ -116,9 +116,7 @@ onUnmounted(() => {
       <Transition name="slide-image">
         <img :key="activeSlide.image" :src="activeSlide.image" :alt="activeSlide.alt" :fetchpriority="activeIndex === 0 ? 'high' : 'auto'" />
       </Transition>
-      <div class="visual-shade"></div>
-      <div class="visual-label"><span class="label-mark">G<span>•</span>PAK</span><span>PRINT WITH PURPOSE<br />PRINT WITH PRECISION</span></div>
-      <div class="visual-index">{{ String(activeIndex + 1).padStart(2, '0') }} / {{ String(slides.length).padStart(2, '0') }} <span></span> {{ activeSlide.imageNote }}</div>
+      
     </div>
     <nav class="slide-pagination" aria-label="Choose a service slide">
       <button v-for="(slide, index) in slides" :key="slide.service" type="button" :class="{ active: activeIndex === index }" :aria-label="`Show ${slide.service} slide, ${index + 1} of ${slides.length}`" :aria-current="activeIndex === index ? 'true' : undefined" @click="changeSlide(index)"><span class="pagination-number">{{ String(index + 1).padStart(2, '0') }}</span><span class="pagination-name">{{ slide.shortLabel }}</span><span class="pagination-rule"></span></button>
