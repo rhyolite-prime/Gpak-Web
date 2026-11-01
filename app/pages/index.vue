@@ -5,10 +5,10 @@ useSeoMeta({
 })
 
 const services = [
-  { number: '01', title: 'Bookwork', description: 'Textbooks, supplementary readers and directories, carefully produced from page to binding.', image: '/images/cat_books.png', alt: 'A collection of beautifully bound books' },
-  { number: '02', title: 'Commercial printing', description: 'Brochures, magazines, annual reports, stationery and more that make every message count.', image: '/images/cat_posters.png', alt: 'Print specialists reviewing colourful printed work' },
-  { number: '03', title: 'Packaging & labels', description: 'Thoughtful light packaging and labels designed to protect your product and elevate your brand.', image: '/images/cat_packaging.png', alt: 'Premium printed product packaging' },
-  { number: '04', title: 'Graphic design', description: 'Distinctive visual communication that brings clarity, character and consistency to your ideas.', image: '/images/cat_labels.png', alt: 'Detailed printed label designs' }
+  { number: '01', title: 'Bookwork', description: 'Textbooks, supplementary readers and directories, carefully produced from page to binding.', image: '/images/PHOTO-2025-04-23-19-12-50.jpg', alt: 'G-PAK printed textbooks and readers' },
+  { number: '02', title: 'Commercial printing', description: 'Brochures, magazines, annual reports, stationery and more that make every message count.', image: '/images/PHOTO-2025-04-23-19-12-492.jpg', alt: 'G-PAK printed labels and commercial print samples' },
+  { number: '03', title: 'Packaging & labels', description: 'Thoughtful light packaging and labels designed to protect your product and elevate your brand.', image: '/images/PHOTO-2025-04-23-19-12-502.jpg', alt: 'G-PAK printed packaging and cartons' },
+  { number: '04', title: 'Graphic design', description: 'Distinctive visual communication that brings clarity, character and consistency to your ideas.', image: '/images/GPAK-flyer.jpg', alt: 'G-PAK graphic design and printed product samples' }
 ]
 </script>
 
@@ -30,10 +30,10 @@ const services = [
           </div>
         </div>
         <div class="hero-visual">
-          <img src="/images/hero_bg.png" alt="Commercial printing press producing vibrant printed materials" fetchpriority="high" />
+          <img src="/images/ghana-print-team.jpg" alt="Illustrative photo of Ghanaian print professionals reviewing a printed sheet" fetchpriority="high" />
           <div class="hero-visual-shade"></div>
           <div class="hero-image-label"><span class="label-mark">G<span>•</span>PAK</span><span>PRINT WITH PURPOSE<br />PRINT WITH PRECISION</span></div>
-          <div class="hero-image-index">01 / 04 <span></span> THE ART OF PRINT</div>
+          <div class="hero-image-index">01 / 04 <span></span> ILLUSTRATIVE IMAGE</div>
         </div>
       </section>
 
