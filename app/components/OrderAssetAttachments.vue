@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 
-const props = defineProps<{ files: File[]; projectId: number }>()
+const props = defineProps<{ files: File[]; projectId: number; otherAssetsSize: number }>()
 const emit = defineEmits<{ 'update:files': [files: File[]] }>()
 const input = ref<HTMLInputElement | null>(null)
 const dragging = ref(false)
@@ -22,7 +22,7 @@ function addFiles(incoming: FileList | File[]) {
     if (file.size > maxFileBytes) { issues.push(`${file.name}: over 10 MB`); continue }
     if (updated.some(existing => existing.name === file.name && existing.size === file.size && existing.lastModified === file.lastModified)) continue
     if (updated.length >= maxFiles) { issues.push('Maximum 5 files per project'); break }
-    if (updated.reduce((sum, item) => sum + item.size, 0) + file.size > maxTotalBytes) { issues.push('Maximum 20 MB per project'); continue }
+    if (props.otherAssetsSize + updated.reduce((sum, item) => sum + item.size, 0) + file.size > maxTotalBytes) { issues.push('Maximum 20 MB across all projects'); continue }
     updated.push(file)
   }
   error.value = [...new Set(issues)].join('. ')
@@ -46,17 +46,18 @@ function removeFile(index: number) {
 
 <template>
   <div class="assets-section">
-    <div class="assets-heading"><h4>Design assets & references <span>OPTIONAL</span></h4><p>Have a logo, artwork, brief or reference? Select it here so you can keep track of what to share with us.</p></div>
+    <div class="assets-heading"><h4>Design assets & references <span>OPTIONAL</span></h4><p>Have a logo, artwork, brief or reference? Add it to your project request so our team can see your creative direction.</p></div>
     <div class="drop-zone" :class="{ dragging }" @dragover.prevent="dragging = true" @dragleave.prevent="dragging = false" @drop.prevent="onDrop">
       <input :id="`design-assets-${projectId}`" ref="input" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.svg,.ai,.psd,.eps,.zip" class="visually-hidden" @change="onSelect" />
       <span class="upload-icon" aria-hidden="true">↑</span>
       <div><label :for="`design-assets-${projectId}`">Choose files</label><span> or drag and drop</span></div>
-      <p>PDF, PNG, JPG, SVG, AI, PSD, EPS or ZIP · up to 5 files, 10 MB each</p>
+      <p>PDF, PNG, JPG, SVG, AI, PSD, EPS or ZIP · 5 per project, 10 MB each, 20 MB per order</p>
     </div>
     <p v-if="error" class="asset-error" role="alert">{{ error }}</p>
     <ul v-if="files.length" class="asset-list" aria-label="Selected design files">
       <li v-for="(file, index) in files" :key="`${file.name}-${file.size}-${file.lastModified}`"><div><span class="file-icon" aria-hidden="true">▤</span><span class="file-name">{{ file.name }}</span><span class="file-size">{{ formatSize(file.size) }}</span></div><button type="button" :aria-label="`Remove ${file.name}`" @click="removeFile(index)">Remove ×</button></li>
     </ul>
+    <p class="delivery-note">Selected files are included with this project when you send the request.</p>
   </div>
 </template>
 

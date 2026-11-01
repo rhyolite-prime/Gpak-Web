@@ -26,6 +26,7 @@ const props = defineProps<{
   rawMaterials: RawMaterial[]
   materialsError: boolean
   assets: File[]
+  otherAssetsSize: number
 }>()
 const emit = defineEmits<{ remove: []; assetsChange: [files: File[]] }>()
 const job = props.job
@@ -94,7 +95,7 @@ function selectPaper(part: 'Inside' | 'Cover') {
       </div>
       <p v-if="materialsError" class="material-note">Paper choices are temporarily unavailable. You can still continue and discuss paper with our team.</p>
     </div>
-    <OrderAssetAttachments :files="assets" :project-id="projectId" @update:files="emit('assetsChange', $event)" />
+    <OrderAssetAttachments :files="assets" :project-id="projectId" :other-assets-size="otherAssetsSize" @update:files="emit('assetsChange', $event)" />
   </section>
 </template>
 

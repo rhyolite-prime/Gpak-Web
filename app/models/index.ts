@@ -62,6 +62,7 @@ export interface JobRequestDetail {
     noOfColoursText: number;
     noOfColoursCover: number;
     finishingOptions: FinishingOptionsPayload;
+    uploadFiles: File[];
     otherInstructions: string;
 }
 

@@ -1,4 +1,5 @@
-import type { FinishingOption, RawMaterial, EstimateType, QuotationDetails,  BaseApiResponse, BasePaginationModel,} from "~/models";
+import type { FinishingOption, RawMaterial, EstimateType, QuotationDetails, BaseApiResponse, BasePaginationModel, OrderRequest } from "~/models";
+import { buildOrderFormData } from '~/utils/orderFormData';
 
 export async function getFinishingOptions() {
  
@@ -55,12 +56,13 @@ export async function rejectQuotation(payload: object) {
   return response;
 }
 
-export async function submitOrderRequest(payload: object) {
+export async function submitOrderRequest(payload: OrderRequest) {
   const response = await httpClient<BaseApiResponse<object>>('ProductionRequest/SubmitRequest', {
-    method: "post",
-    body: payload,
+    method: 'post',
+    // Let the browser set the multipart boundary; do not set Content-Type.
+    body: buildOrderFormData(payload),
     headers: {
-      "AccountSecret": "LgDPlDbE"
+      AccountSecret: 'LgDPlDbE'
     }
   });
   return response.success;
