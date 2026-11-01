@@ -21,7 +21,6 @@ const finishGroups = [
 ] as const
 const bindings = ['Saddle stitch', 'Perfect bind', 'Case bind', 'Wire O', 'Spiral bind', 'Side stab', 'Padding']
 const addOns = ['Die cutting', 'Embossing', 'Folding', 'Numbering', 'Perforating', 'Punching', 'Cutting', 'Sewing', 'Fold/Glue', 'Glue']
-const sizes = ['A2 - 420 x 594mm', 'A3 - 297 x 420mm', 'A4 - 210 x 297mm', 'A5 - 148 x 210mm', 'Quarto - 180 x 240mm']
 const toApiOption = (value: string) => ({ 'UV varnish': 'uv-vanish', 'Waterbase varnish': 'waterbase-vanish', 'Oil varnish': 'oil-vanish' }[value] || value.toLowerCase().replace(/[ \/]+/g, '-'))
 const emptyJob = () => ({
   jobName: '', pages: 1, quantity: 1, size: '', customSize: '',
@@ -34,6 +33,9 @@ const emptyJob = () => ({
 })
 type Job = ReturnType<typeof emptyJob>
 type FinishKey = 'laminate' | 'vanish' | 'spot' | 'windowPatching'
+const projectKeys = ref([0])
+let nextProjectKey = 1
+const projectAnnouncement = ref('')
 const form = reactive({ customer: '', contactName: '', phoneNo: '', emailAddress: '', location: '', noOfJobs: 1, jobRequests: [emptyJob()] })
 const touched = ref(false)
 const phoneValid = computed(() => form.phoneNo.replace(/\D/g, '').length >= 9)
@@ -65,13 +67,27 @@ function next() {
   step.value++
   scrollTop()
 }
-function addJob() { form.jobRequests.push(emptyJob()); form.noOfJobs = form.jobRequests.length }
-function removeJob(index: number) { if (form.jobRequests.length > 1) { form.jobRequests.splice(index, 1); form.noOfJobs = form.jobRequests.length } }
-function variants(id: string): { name: string }[] { return (rawMaterials.value.find(m => m.id === id) as RawMaterial & { variants?: { name: string }[] })?.variants ?? [] }
-function selectPaper(job: Job, part: 'Inside' | 'Cover') {
-  const id = job[`paper${part}RawMaterialId`]
-  job[`paper${part}`] = rawMaterials.value.find(m => m.id === id)?.name ?? ''
-  job[`paper${part}Variant`] = ''
+async function addJob() {
+  const projectId = nextProjectKey++
+  form.jobRequests.push(emptyJob())
+  projectKeys.value.push(projectId)
+  form.noOfJobs = form.jobRequests.length
+  projectAnnouncement.value = `Project ${form.noOfJobs} added. Complete its details below.`
+
+  // The new card is rendered on the next tick. Scroll to its beginning rather
+  // than the bottom of the form, then place keyboard focus in its first field.
+  await nextTick()
+  const card = document.getElementById(`project-${projectId}`)
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  card?.scrollIntoView({ behavior: reducedMotion ? 'auto' : 'smooth', block: 'start' })
+  document.getElementById(`jobName-${projectId}`)?.focus({ preventScroll: true })
+}
+function removeJob(index: number) {
+  if (form.jobRequests.length <= 1) return
+  form.jobRequests.splice(index, 1)
+  projectKeys.value.splice(index, 1)
+  form.noOfJobs = form.jobRequests.length
+  projectAnnouncement.value = `Project removed. ${form.noOfJobs} project${form.noOfJobs === 1 ? '' : 's'} remaining.`
 }
 function selectFinish(job: Job, key: FinishKey, value: string) {
   const alreadySelected = job[key] === value
@@ -110,6 +126,9 @@ async function handleSubmit() {
     submitSuccess.value = true
     Object.assign(form, { customer: '', contactName: '', phoneNo: '', emailAddress: '', location: '', noOfJobs: 1, jobRequests: [emptyJob()] })
     step.value = 0
+    projectKeys.value = [0]
+    nextProjectKey = 1
+    projectAnnouncement.value = ''
     touched.value = false
   } catch {
     errorMessage.value = 'We could not send your request. Please try again, or contact us directly.'
@@ -152,22 +171,21 @@ onMounted(async () => {
               </div>
               <div v-else-if="step === 1" class="step-panel">
                 <div class="panel-heading"><p class="panel-eyebrow">02 / PROJECT DETAILS</p><h2>What are we creating?</h2><p>Give us the essentials. Not sure about a detail? Leave optional fields blank and we'll help you work it out.</p></div>
-                <div v-for="(job, index) in form.jobRequests" :key="index" class="job-block"><div class="job-heading"><div><span>PROJECT {{ String(index + 1).padStart(2, '0') }}</span><h3>{{ job.jobName || `Your project ${index + 1}` }}</h3></div><button v-if="form.jobRequests.length > 1" type="button" class="remove-button" @click="removeJob(index)">Remove project ×</button></div>
-                  <div class="field-grid">
-                    <div class="field field-full"><label :for="`jobName-${index}`">What are you printing? <span>*</span></label><input :id="`jobName-${index}`" v-model="job.jobName" type="text" placeholder="e.g. Company brochure, textbook, product box" :class="{ invalid: touched && !job.jobName.trim() }" /><small v-if="touched && !job.jobName.trim()">Please name this project.</small></div>
-                    <div class="field"><label :for="`quantity-${index}`">Quantity <span>*</span></label><input :id="`quantity-${index}`" v-model.number="job.quantity" type="number" min="1" :class="{ invalid: touched && !(Number(job.quantity) > 0) }" /><small v-if="touched && !(Number(job.quantity) > 0)">Enter at least 1.</small></div>
-                    <div class="field"><label :for="`pages-${index}`">Number of pages <span>*</span></label><input :id="`pages-${index}`" v-model.number="job.pages" type="number" min="1" :class="{ invalid: touched && !(Number(job.pages) > 0) }" /><small v-if="touched && !(Number(job.pages) > 0)">Enter at least 1.</small></div>
-                    <div class="field"><label :for="`size-${index}`">Finished size <span class="optional">OPTIONAL</span></label><select :id="`size-${index}`" v-model="job.size"><option value="">Not sure yet</option><option v-for="size in sizes" :key="size">{{ size }}</option><option value="custom">Custom size</option></select></div>
-                    <div v-if="job.size === 'custom'" class="field"><label :for="`customSize-${index}`">Custom dimensions <span>*</span></label><input :id="`customSize-${index}`" v-model="job.customSize" type="text" placeholder="e.g. 100 x 200mm" :class="{ invalid: touched && !job.customSize.trim() }" /><small v-if="touched && !job.customSize.trim()">Enter your dimensions.</small></div>
-                    <div class="field"><label :for="`insideColours-${index}`">Colours — inside / text</label><select :id="`insideColours-${index}`" v-model.number="job.noOfColoursText"><option v-for="n in 4" :key="n" :value="n">{{ n }} colour{{ n > 1 ? 's' : '' }}</option></select></div>
-                    <div class="field"><label :for="`coverColours-${index}`">Colours — cover</label><select :id="`coverColours-${index}`" v-model.number="job.noOfColoursCover"><option v-for="n in 4" :key="n" :value="n">{{ n }} colour{{ n > 1 ? 's' : '' }}</option></select></div>
-                    <div class="field"><label :for="`insidePaper-${index}`">Inside paper <span class="optional">OPTIONAL</span></label><select :id="`insidePaper-${index}`" v-model="job.paperInsideRawMaterialId" @change="selectPaper(job, 'Inside')"><option value="">Choose later</option><option v-for="material in rawMaterials" :key="material.id" :value="material.id">{{ material.name }}</option></select></div>
-                    <div class="field"><label :for="`insideVariant-${index}`">Inside paper variant</label><select :id="`insideVariant-${index}`" v-model="job.paperInsideVariant" :disabled="!variants(job.paperInsideRawMaterialId).length"><option value="">Choose later</option><option v-for="variant in variants(job.paperInsideRawMaterialId)" :key="variant.name" :value="variant.name">{{ variant.name }}</option></select></div>
-                    <div class="field"><label :for="`coverPaper-${index}`">Cover paper <span class="optional">OPTIONAL</span></label><select :id="`coverPaper-${index}`" v-model="job.paperCoverRawMaterialId" @change="selectPaper(job, 'Cover')"><option value="">Choose later</option><option v-for="material in rawMaterials" :key="material.id" :value="material.id">{{ material.name }}</option></select></div>
-                    <div class="field"><label :for="`coverVariant-${index}`">Cover paper variant</label><select :id="`coverVariant-${index}`" v-model="job.paperCoverVariant" :disabled="!variants(job.paperCoverRawMaterialId).length"><option value="">Choose later</option><option v-for="variant in variants(job.paperCoverRawMaterialId)" :key="variant.name" :value="variant.name">{{ variant.name }}</option></select></div>
-                  </div><p v-if="materialsError" class="material-note">Paper choices are temporarily unavailable. You can still continue and discuss paper with our team.</p>
-                </div>
+                <OrderProjectCard
+                  v-for="(job, index) in form.jobRequests"
+                  :key="projectKeys[index]"
+                  :job="job"
+                  :index="index"
+                  :project-id="projectKeys[index]!"
+                  :can-remove="form.jobRequests.length > 1"
+                  :touched="touched"
+                  :raw-materials="rawMaterials"
+                  :materials-error="materialsError"
+                  @remove="removeJob(index)"
+                />
+                <p class="add-project-help">Have another item in mind? You can include multiple projects in one request.</p>
                 <button type="button" class="add-project" @click="addJob"><span>＋</span> Add another project</button>
+                <p class="sr-only" role="status" aria-live="polite">{{ projectAnnouncement }}</p>
               </div>
               <div v-else-if="step === 2" class="step-panel">
                 <div class="panel-heading"><p class="panel-eyebrow">03 / FINISHING TOUCHES</p><h2>Make it yours.</h2><p>Choose any finishing details you know. Everything here is optional.</p></div>
@@ -199,4 +217,7 @@ onMounted(async () => {
 <style scoped>
 .order-page{background:#f5f6f2;padding:70px 0 90px}.order-intro{display:flex;justify-content:space-between;align-items:end;gap:40px;margin-bottom:49px}.order-intro h1{font-family:var(--font-display);font-size:clamp(48px,5vw,76px);line-height:1.1;letter-spacing:-.06em;margin:18px 0 16px}.order-intro h1 em{font-family:Georgia,serif;font-weight:400;color:var(--color-primary)}.order-intro p:not(.section-kicker){max-width:580px;color:#67716c;font-size:15px;margin-bottom:0}.intro-aside{text-align:right;border-left:1px solid #d2d8d2;padding-left:32px;flex:none}.intro-aside span,.sidebar-eyebrow,.sidebar-help>span,.panel-eyebrow,.job-heading span,.review-grid span{font-size:10px;letter-spacing:.17em;font-weight:800;color:var(--color-primary)}.intro-aside p{font-family:var(--font-display);font-size:16px!important;font-weight:700;color:#283330!important;margin:10px 0 0!important;line-height:1.4}.wizard-shell{display:grid;grid-template-columns:305px minmax(0,1fr);background:#fff;min-height:640px;box-shadow:0 16px 50px rgba(27,41,36,.045);scroll-margin-top:20px}.wizard-sidebar{background:#202c2c;color:white;padding:47px 34px;display:flex;flex-direction:column}.sidebar-eyebrow{color:#d86a74}.wizard-sidebar h2{font-family:var(--font-display);font-size:29px;line-height:1.2;letter-spacing:-.055em;margin:20px 0 8px}.wizard-sidebar>p{font-size:12px;line-height:1.6;color:#aab8b3;margin-bottom:50px}.step-list{display:flex;flex-direction:column;gap:0}.step-list button{display:flex;align-items:center;text-align:left;gap:16px;min-height:60px;background:none;border:0;color:#899b96;font-size:13px;font-weight:600;padding:0;position:relative}.step-list button:not(:last-child):before{content:'';position:absolute;left:16px;top:47px;bottom:-14px;width:1px;background:#536361}.step-list button.active{color:white}.step-list button.done{color:#d7e4df;cursor:pointer}.step-list button:disabled{cursor:not-allowed}.step-number{display:grid;place-items:center;flex:none;width:33px;height:33px;border:1px solid #596a67;border-radius:50%;font-size:10px;color:#9baea8;position:relative;z-index:1;background:#202c2c}.active .step-number{background:#ce2435;border-color:#ce2435;color:white}.done .step-number{background:#516d61;border-color:#516d61;color:#fff}.sidebar-help{border-top:1px solid #4a5854;padding-top:26px;margin-top:auto;display:flex;flex-direction:column;gap:10px}.sidebar-help>span{color:#c9d2cc;margin-bottom:7px}.sidebar-help a{font-size:12px;color:#d9e4df;word-break:break-word}.sidebar-help a:hover{color:white}.wizard-main{padding:48px min(6vw,78px) 45px;min-width:0}.mobile-progress{display:none}.panel-heading{margin-bottom:33px}.panel-eyebrow{margin:0 0 12px}.panel-heading h2{font-family:var(--font-display);font-size:clamp(27px,2.6vw,39px);letter-spacing:-.05em;line-height:1.2;margin:0 0 10px}.panel-heading>p:last-child{font-size:13px;color:#76807a;max-width:550px;line-height:1.6;margin:0}.field-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:23px 20px}.field{min-width:0}.field-full{grid-column:1/-1}.field label{display:block;font-size:12px;font-weight:700;margin-bottom:9px;color:#2b3531}.field label>span:not(.optional){color:#ce2435}.optional{font-size:9px;letter-spacing:.13em;color:#a0a9a3;font-weight:700;margin-left:5px}.field input,.field select,.field textarea,.option-custom{display:block;width:100%;height:47px;border:1px solid #dce2dc;background:#fbfcfa;color:#26322d;border-radius:0;padding:0 13px;font-size:13px;outline:0;transition:border-color .2s,box-shadow .2s}.field textarea{height:auto;min-height:106px;padding-top:13px;resize:vertical}.field input:focus,.field select:focus,.field textarea:focus,.option-custom:focus{border-color:#ce2435;box-shadow:0 0 0 3px rgba(206,36,53,.08)}.field input::placeholder,.field textarea::placeholder,.option-custom::placeholder{color:#9da8a0}.field select:disabled{color:#a2aaa5;background:#f3f5f2}.field .invalid{border-color:#ce2435}.field small{display:block;color:#be2234;margin-top:5px;font-size:11px}.wizard-actions{border-top:1px solid #e9ede8;margin-top:42px;padding-top:25px;display:flex;align-items:center;justify-content:space-between;gap:15px}.next-button{min-width:172px;cursor:pointer;border:0}.next-button:disabled{opacity:.65;cursor:wait}.back-button{border:0;background:none;color:#2b3631;font-size:13px;font-weight:700;padding:10px 0}.back-button:hover{color:#ce2435}.action-hint{font-size:11px;color:#939d96}.form-error{background:#fff1f2;color:#ae1e30;padding:12px 15px;border-left:3px solid #ce2435;font-size:12px;margin:25px 0 0}.job-block{border:1px solid #e1e7e1;padding:25px;margin:0 0 24px}.job-heading{display:flex;align-items:start;justify-content:space-between;gap:15px;margin-bottom:25px}.job-heading h3{font-family:var(--font-display);font-size:20px;letter-spacing:-.04em;margin:8px 0 0}.remove-button{border:0;background:none;color:#b72737;font-size:12px;font-weight:700;padding:0}.add-project{width:100%;padding:18px;border:1px dashed #b8c6bc;background:#f9fbf8;color:#263931;font-weight:700;font-size:13px;display:flex;align-items:center;justify-content:center;gap:10px}.add-project:hover{border-color:#ce2435;color:#ce2435}.add-project span{font-size:19px;line-height:1}.material-note{font-size:11px;color:#a46020;margin:18px 0 0}.option-section{border-top:1px solid #e6ebe5;padding:21px 0}.option-section h4{font-family:var(--font-display);font-size:15px;margin:0 0 4px}.option-section>p{font-size:12px;color:#78827a;margin:0 0 15px}.choice-grid{display:flex;flex-wrap:wrap;gap:8px}.choice{display:inline-flex;align-items:center;min-height:36px;border:1px solid #dce4db;background:#fff;color:#48544c;padding:8px 12px;font-size:11px;line-height:1.4;cursor:pointer;transition:all .2s}.choice:hover{border-color:#ce2435}.choice.chosen{border-color:#ce2435;color:#ba2132;background:#fff4f4}.choice input{position:absolute;opacity:0;width:1px;height:1px}.choice:has(input:focus-visible),.choice-button:focus-visible{outline:2px solid #ce2435;outline-offset:2px}.choice-button{font:inherit}.option-custom{margin-top:10px;max-width:340px}.finish-group{margin:16px 0 22px}.finish-group>span{display:block;font-size:11px;font-weight:800;margin-bottom:10px;color:#6d786f}.notes-field{margin-top:12px}.review-block{border:1px solid #e1e7e1;padding:24px;margin-bottom:16px}.review-title{display:flex;justify-content:space-between;align-items:start;gap:15px;margin-bottom:22px}.review-title h3{font-family:var(--font-display);font-size:18px;letter-spacing:-.03em;margin:0}.review-title button,.review-finish-edit{background:none;border:0;color:#bb2233;font-weight:700;font-size:12px;white-space:nowrap;padding:0}.review-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px}.review-grid>div{min-width:0;display:flex;flex-direction:column;gap:5px}.review-grid span{color:#8b9a90;font-size:9px}.review-grid strong{font-size:13px;font-weight:600;overflow-wrap:anywhere}.review-finish-edit{margin-top:22px}.review-assurance{background:#f5f7f3;display:flex;align-items:start;gap:14px;padding:17px 20px}.review-assurance span{color:#ce2435;font-size:24px;line-height:1}.review-assurance p{margin:0;color:#66736b;font-size:12px}.below-wizard{text-align:center;color:#79857e;font-size:12px;margin:24px 0 0}.below-wizard a{color:#bf2435;font-weight:700}.success-overlay{position:fixed;inset:0;z-index:200;background:rgba(17,29,26,.75);display:grid;place-items:center;padding:20px}.success-card{background:white;padding:50px;max-width:480px;text-align:center}.success-icon{display:grid;place-items:center;width:60px;height:60px;background:#e7f3eb;color:#32714c;border-radius:50%;font-size:27px;margin:0 auto 24px}.success-card h2{font-family:var(--font-display);font-size:32px;letter-spacing:-.05em}.success-card>p:not(.panel-eyebrow){color:#68746d;font-size:14px;margin-bottom:25px}.success-card .button{border:0;margin:auto}
 @media(max-width:1000px){.wizard-shell{grid-template-columns:245px 1fr}.wizard-sidebar{padding:35px 24px}.wizard-main{padding:37px 32px}.intro-aside{display:none}}@media(max-width:720px){.order-page{padding:50px 0 70px}.order-intro{margin-bottom:30px}.order-intro h1{font-size:clamp(43px,10vw,65px)}.wizard-shell{display:block}.wizard-sidebar{display:none}.wizard-main{padding:27px 20px 32px}.mobile-progress{display:block;margin-bottom:30px;font-size:10px;font-weight:800;letter-spacing:.12em;color:#7c8a80}.mobile-progress>span:nth-child(2){float:right;color:#ce2435}.progress-track{height:3px;background:#e5eae3;margin-top:14px}.progress-track>div{height:100%;background:#ce2435;transition:width .3s}.panel-heading h2{font-size:29px}.field-grid,.review-grid{grid-template-columns:1fr;gap:19px}.field-full{grid-column:auto}.job-block,.review-block{padding:19px}.wizard-actions{margin-top:30px}.next-button{min-width:145px}.success-card{padding:34px 23px}}
+
+.add-project-help{font-size:12px;color:#78827a;margin:0 0 12px}
+.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
 </style>
