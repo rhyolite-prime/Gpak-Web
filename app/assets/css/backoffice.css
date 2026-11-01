@@ -1,0 +1,109 @@
+/*
+ * GPAK CRM Backoffice — Tailwind CSS v4
+ *
+ * Scoped on purpose: the public website keeps its hand-written stylesheet
+ * (assets/css/index.css). This file only loads for the backoffice, so we
+ * import the theme + utilities layers (no global preflight) and tell Tailwind
+ * exactly which files to scan, so no utilities leak into the marketing site.
+ */
+
+@import "tailwindcss/theme.css" layer(theme);
+@import "tailwindcss/utilities.css" layer(utilities) source(none) important;
+
+@source "../../layouts/backoffice.vue";
+@source "../../pages/backoffice";
+@source "../../components/backoffice";
+
+@theme {
+  --font-sans: "Outfit", ui-sans-serif, system-ui, sans-serif;
+
+  /* GPAK brand gold (#f1c50e) scale */
+  --color-brand-50: oklch(98.7% 0.018 96);
+  --color-brand-100: oklch(96% 0.05 96);
+  --color-brand-200: oklch(93.5% 0.09 95);
+  --color-brand-300: oklch(91% 0.135 93);
+  --color-brand-400: oklch(87.5% 0.165 90);
+  --color-brand-500: oklch(83.5% 0.165 90);
+  --color-brand-600: oklch(74% 0.15 83);
+  --color-brand-700: oklch(63% 0.125 75);
+  --color-brand-800: oklch(51% 0.095 70);
+  --color-brand-900: oklch(40% 0.075 65);
+
+  --shadow-card: 0 1px 2px oklch(20% 0.02 260 / 0.04), 0 10px 30px -14px oklch(20% 0.02 260 / 0.14);
+  --shadow-float: 0 18px 50px -12px oklch(20% 0.02 260 / 0.28);
+
+  --ease-smooth: cubic-bezier(0.22, 1, 0.36, 1);
+  --animate-fade-up: fade-up 0.5s var(--ease-smooth) both;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(8px);
+    }
+    to {
+      opacity: 1;
+      transform: none;
+    }
+  }
+}
+
+/* Scoped base layer (replaces preflight, only inside the CRM) */
+@layer base {
+  .crm,
+  .crm *,
+  .crm *::before,
+  .crm *::after {
+    box-sizing: border-box;
+    border: 0 solid;
+  }
+  .crm button,
+  .crm [role="button"] {
+    cursor: pointer;
+    background: none;
+    font: inherit;
+    color: inherit;
+  }
+  .crm input,
+  .crm select,
+  .crm textarea {
+    font: inherit;
+    color: inherit;
+  }
+  .crm img,
+  .crm svg {
+    display: block;
+  }
+  .crm h1,
+  .crm h2,
+  .crm h3,
+  .crm h4,
+  .crm p,
+  .crm ul,
+  .crm ol,
+  .crm dl,
+  .crm dd {
+    margin: 0;
+  }
+  .crm ul,
+  .crm ol {
+    padding: 0;
+    list-style: none;
+  }
+  .crm table {
+    border-collapse: collapse;
+  }
+}
+
+/* Reusable component utilities */
+@utility surface {
+  @apply rounded-2xl bg-white ring-1 ring-slate-900/5 shadow-card;
+}
+
+@utility eyebrow {
+  @apply text-[11px] font-semibold tracking-[0.14em] uppercase text-slate-400;
+}
+
+@utility scroll-slim {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
